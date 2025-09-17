@@ -1,0 +1,172 @@
+<div class="min-h-screen bg-gray-900 text-gray-200 lg:flex">
+  <!-- Backdrop for mobile -->
+  @if (isSidebarOpen()) {
+    <div (click)="isSidebarOpen.set(false)" class="fixed inset-0 bg-black/60 z-30 lg:hidden animate-fade-in"></div>
+  }
+
+  <!-- Sidebar -->
+  <aside 
+    class="fixed inset-y-0 left-0 z-40 w-64 flex-shrink-0 bg-gray-800/70 backdrop-blur-lg p-6 flex flex-col space-y-8 border-r border-gray-700/50 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0"
+    [class]="isSidebarOpen() ? 'translate-x-0' : '-translate-x-full'">
+    <header class="flex items-center space-x-2">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-8 w-8" aria-hidden="true">
+        <defs>
+          <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#3b82f6"/>
+            <stop offset="100%" stop-color="#a855f7"/>
+          </linearGradient>
+        </defs>
+        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" fill="url(#logoGradient)"/>
+      </svg>
+      <h1 class="text-2xl font-bold">Mis Calendarios</h1>
+    </header>
+
+    <!-- Calendar List -->
+    <nav class="flex-grow">
+      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Tus Calendarios</h2>
+      <ul class="space-y-2">
+        @for (cal of calendars(); track cal.id) {
+          <li class="group relative rounded-lg" [class]="{'bg-blue-500/20': activeCalendar()?.id === cal.id && editingCalendarId() !== cal.id}">
+            @if (editingCalendarId() === cal.id) {
+              <div class="p-2 flex flex-col">
+                <input [value]="renamingText()" (input)="handleRenameInput($event)" (keydown.enter)="saveRename()" (keydown.escape)="cancelRename()"
+                       type="text" class="w-full bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2">
+                <div class="flex justify-end space-x-2">
+                  <button (click)="saveRename()" class="p-1 text-emerald-400 hover:bg-gray-700 rounded-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  </button>
+                  <button (click)="cancelRename()" class="p-1 text-red-400 hover:bg-gray-700 rounded-md">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <button (click)="selectCalendar(cal.id)" 
+                      class="w-full text-left flex items-center p-2 rounded-lg transition-colors duration-200"
+                      [class]="activeCalendar()?.id === cal.id ? 'text-white' : 'hover:bg-gray-700/50 text-gray-300'">
+                <span class="w-3 h-3 rounded-full mr-3 shrink-0" [class]="cal.color.bg"></span>
+                <span class="truncate flex-1">{{ cal.name }}</span>
+              </button>
+              <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <button (click)="startRenaming(cal)" class="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg>
+                  </button>
+                  <button (click)="promptDelete(cal)" class="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <!-- New Calendar Form -->
+    <div class="mt-auto">
+      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Nuevo Calendario</h2>
+      <form (submit)="$event.preventDefault(); addCalendar()" class="flex flex-col space-y-3">
+        <input [value]="newCalendarName()" (input)="handleInput($event)"
+               type="text" 
+               placeholder="Ej: Estudio" 
+               class="w-full bg-gray-700/50 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+        <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                [disabled]="!newCalendarName().trim()">
+          Añadir
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+    <!-- Mobile Header -->
+    <header class="flex items-center justify-between lg:hidden mb-4">
+        <button (click)="isSidebarOpen.set(true)" class="p-2 rounded-md text-gray-300 hover:bg-gray-700/50 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+        @if (activeCalendar(); as cal) {
+            <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full" [class]="cal.color.bg"></span>
+                <h1 class="text-lg font-bold" [class]="cal.color.text">{{ cal.name }}</h1>
+            </div>
+        }
+        <div class="w-8"></div> <!-- Spacer to balance the header -->
+    </header>
+
+    @if (activeCalendar(); as cal) {
+      <div class="max-w-4xl mx-auto">
+        <header class="mb-6 hidden lg:flex items-center space-x-3">
+            <span class="w-4 h-4 rounded-full" [class]="cal.color.bg"></span>
+            <h1 class="text-3xl font-bold" [class]="cal.color.text">{{ cal.name }}</h1>
+        </header>
+        <app-calendar-view 
+          [activeCalendar]="cal"
+          [selectedDate]="selectedDate()"
+          (daySelected)="onDaySelected($event)">
+        </app-calendar-view>
+        
+        <!-- Notes Section -->
+        <div class="mt-6 min-h-[160px]">
+          @if (selectedDate(); as date) {
+            @let dayData = calendarService.getDayData(date);
+            <div class="p-6 bg-gray-800/50 rounded-xl shadow-lg animate-fade-in">
+              <h3 class="text-lg font-semibold text-white mb-3 capitalize">
+                Notas para el {{ date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' }) }}
+              </h3>
+              <textarea 
+                (input)="handleNoteInput($event)"
+                [value]="dayData?.note || ''"
+                rows="3" 
+                class="w-full bg-gray-700/50 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition" 
+                [class]="'focus:' + (cal.color.ring)"
+                placeholder="Añade tus anotaciones aquí..."></textarea>
+            </div>
+          } @else {
+            <div class="flex items-center justify-center h-full pt-10 text-center text-gray-500">
+              <p>Selecciona un día en el calendario para marcarlo y añadir notas.</p>
+            </div>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="flex items-center justify-center h-full">
+        <div class="text-center p-4">
+            <h2 class="text-2xl font-semibold text-gray-400">Selecciona o crea un calendario</h2>
+            <p class="text-gray-500 mt-2">Empieza por crear un nuevo calendario en la barra lateral.</p>
+        </div>
+      </div>
+    }
+  </main>
+</div>
+
+<!-- Delete Confirmation Modal -->
+@if (calendarToDelete(); as cal) {
+  <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in p-4">
+    <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-sm m-4 border border-gray-700/50">
+      <h3 class="text-xl font-bold text-white mb-2">Confirmar Eliminación</h3>
+      <p class="text-gray-400 mb-6">
+        ¿Estás seguro de que quieres eliminar el calendario "<strong>{{ cal.name }}</strong>"? <br>
+        Esta acción es irreversible y se perderán todos los datos asociados.
+      </p>
+      <div class="flex justify-end space-x-4">
+        <button (click)="cancelDelete()" class="px-5 py-2 rounded-md bg-gray-600 hover:bg-gray-500 text-white font-semibold transition-colors duration-200">
+          Cancelar
+        </button>
+        <button (click)="confirmDelete()" class="px-5 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white font-semibold transition-colors duration-200">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+</style>

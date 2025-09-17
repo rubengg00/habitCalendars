@@ -1,0 +1,53 @@
+<div class="bg-gray-800/50 rounded-xl p-4 sm:p-6 shadow-lg">
+  <!-- Calendar Header -->
+  <header class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-semibold capitalize">{{ currentMonthAndYear() }}</h2>
+    <div class="flex items-center space-x-2">
+       <button (click)="goToToday()" class="px-3 py-1 text-sm rounded-md bg-gray-700 hover:bg-gray-600 transition">Hoy</button>
+      <button (click)="previousMonth()" class="p-2 rounded-full hover:bg-gray-700 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+      </button>
+      <button (click)="nextMonth()" class="p-2 rounded-full hover:bg-gray-700 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Calendar Grid -->
+  <div class="grid grid-cols-7 gap-1">
+    <!-- Weekday Headers -->
+    @for (day of weekdays; track day) {
+      <div class="text-center text-xs font-medium text-gray-400 py-2">{{ day }}</div>
+    }
+    
+    <!-- Day Cells -->
+    @for (week of monthGrid(); track week) {
+      @for (day of week; track day.date) {
+        @let dayData = getDayData(day.date);
+        <div (click)="selectDay(day)"
+             [class]="'relative h-16 md:h-20 flex flex-col justify-between p-2 border border-transparent rounded-lg transition-colors duration-200 ' +
+                      (day.isCurrentMonth ? 'cursor-pointer ' : 'text-gray-500 ') +
+                      (dayData?.marked
+                        ? activeCalendar().color.bg + ' text-white font-bold hover:brightness-90 '
+                        : (isToday(day.date) ? 'bg-blue-500/20 ' : (day.isCurrentMonth ? 'bg-gray-700 ' : '')) + (day.isCurrentMonth ? 'hover:bg-gray-700/60 ' : '')
+                      ) +
+                      (isSelected(day.date) ? 'ring-2 ' + activeCalendar().color.ring : '')"
+            >
+          <span class="font-medium self-start text-sm">{{ day.date.getDate() }}</span>
+          
+          @if (day.isCurrentMonth) {
+            <div class="flex items-center justify-end h-4">
+                @if (dayData?.note) {
+                    <div class="w-1.5 h-1.5 bg-amber-400 rounded-full" title="Tiene nota"></div>
+                }
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

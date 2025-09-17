@@ -1,0 +1,5 @@
+{
+  "name": "MarkYourDays",
+  "description": "An application to create personalized calendars for tracking activities like gym sessions, study hours, or any other habit. Mark days, add notes, and manage multiple calendars with ease.",
+  "requestFramePermissions": []
+}
