@@ -13,6 +13,9 @@ interface CalendarDay {
   imports: [CommonModule],
   templateUrl: './calendar-view.component.html',
   styleUrls: ['./calendar-view.component.css'],
+  // Activa la detección de cambios "OnPush": Angular solo volverá a renderizar este componente
+  // si una de sus @Input cambia, se emite un evento (@Output) o se dispara un Observable
+  // al que esté suscrito dentro del template. Mejora el rendimiento al evitar chequeos innecesarios.
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarViewComponent {
@@ -35,6 +38,27 @@ export class CalendarViewComponent {
       month: 'long',
       year: 'numeric',
     });
+  });
+
+  // Contador de días marcados en el mes actual
+  markedDaysCount = computed(() => {
+    const date = this.currentDate();
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const calendar = this.activeCalendar();
+
+    let count = 0;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const currentDate = new Date(year, month, day);
+      const key = this.formatDateToKey(currentDate);
+      if (calendar.data[key]?.marked) {
+        count++;
+      }
+    }
+
+    return count;
   });
 
   monthGrid = computed<CalendarDay[][]>(() => {
