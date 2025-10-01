@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Calendar, DayData } from '../../models/calendar.model';
+import { CalendarService, COLOR_PALETTES } from '../../services/calendar.service';
 
 interface CalendarDay {
   date: Date;
@@ -19,9 +20,16 @@ interface CalendarDay {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarViewComponent {
+  calendarService = inject(CalendarService);
   activeCalendar = input.required<Calendar>();
   selectedDate = input<Date | null>(null);
   daySelected = output<Date>();
+
+  // Añadir señal para controlar la visibilidad del selector de colores
+  showColorPicker = signal(false);
+
+  // Añadir la paleta de colores disponible
+  colorPalettes = COLOR_PALETTES;
 
   currentDate = signal(new Date());
   weekdays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -71,43 +79,43 @@ export class CalendarViewComponent {
 
     const firstDayOfWeek = firstDayOfMonth.getDay();
     const totalDays = lastDayOfMonth.getDate();
-    
+
     const grid: CalendarDay[] = [];
     const prevMonthLastDay = new Date(year, month, 0).getDate();
 
     // Days from previous month
     for (let i = firstDayOfWeek; i > 0; i--) {
-      grid.push({ 
-        date: new Date(year, month - 1, prevMonthLastDay - i + 1), 
-        isCurrentMonth: false 
+      grid.push({
+        date: new Date(year, month - 1, prevMonthLastDay - i + 1),
+        isCurrentMonth: false
       });
     }
 
     // Days from current month
     for (let i = 1; i <= totalDays; i++) {
-      grid.push({ 
-        date: new Date(year, month, i), 
-        isCurrentMonth: true 
+      grid.push({
+        date: new Date(year, month, i),
+        isCurrentMonth: true
       });
     }
-    
+
     // Days from next month
     const gridEndIndex = grid.length;
     for (let i = 1; grid.length < 42; i++) {
-        grid.push({ 
-            date: new Date(year, month + 1, i), 
-            isCurrentMonth: false 
-        });
+      grid.push({
+        date: new Date(year, month + 1, i),
+        isCurrentMonth: false
+      });
     }
-    
+
     // Chunk into weeks
     const weeks: CalendarDay[][] = [];
     for (let i = 0; i < grid.length; i += 7) {
-        weeks.push(grid.slice(i, i + 7));
+      weeks.push(grid.slice(i, i + 7));
     }
     return weeks;
   });
-  
+
   previousMonth() {
     this.currentDate.update(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
   }
@@ -115,35 +123,47 @@ export class CalendarViewComponent {
   nextMonth() {
     this.currentDate.update(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
   }
-  
+
   goToToday() {
     this.currentDate.set(new Date());
   }
 
   selectDay(day: CalendarDay) {
     if (day.isCurrentMonth) {
-        this.daySelected.emit(day.date);
+      this.daySelected.emit(day.date);
     }
   }
 
   isToday(date: Date): boolean {
     const today = new Date();
     return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
   }
 
   isSelected(date: Date): boolean {
     const selected = this.selectedDate();
     if (!selected || !date) return false;
     return date.getDate() === selected.getDate() &&
-           date.getMonth() === selected.getMonth() &&
-           date.getFullYear() === selected.getFullYear();
+      date.getMonth() === selected.getMonth() &&
+      date.getFullYear() === selected.getFullYear();
   }
 
   getDayData(date: Date): DayData | undefined {
     const calendar = this.activeCalendar();
     const key = this.formatDateToKey(date);
     return calendar.data[key];
+  }
+
+  // Método para cambiar el color del calendario
+  changeColor(colorIndex: number) {
+    const calendar = this.activeCalendar();
+    this.calendarService.changeCalendarColor(calendar.id, colorIndex);
+    this.showColorPicker.set(false);
+  }
+
+  // Método para mostrar/ocultar el selector de colores
+  toggleColorPicker() {
+    this.showColorPicker.update(value => !value);
   }
 }

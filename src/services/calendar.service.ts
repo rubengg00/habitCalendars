@@ -4,7 +4,7 @@ import { Calendar, DayData, CalendarColor } from '../models/calendar.model';
 const STORAGE_KEY = 'customCalendars';
 
 // Predefined beautiful color palettes from Tailwind
-const COLOR_PALETTES: CalendarColor[] = [
+export const COLOR_PALETTES: CalendarColor[] = [
   { bg: 'bg-blue-500', text: 'text-blue-400', border: 'border-blue-500', ring: 'ring-blue-500' },
   { bg: 'bg-emerald-500', text: 'text-emerald-400', border: 'border-emerald-500', ring: 'ring-emerald-500' },
   { bg: 'bg-purple-500', text: 'text-purple-400', border: 'border-purple-500', ring: 'ring-purple-500' },
@@ -161,5 +161,17 @@ export class CalendarService {
     if (!cal) return undefined;
     const dateKey = this.formatDateToKey(date);
     return cal.data[dateKey];
+  }
+
+  changeCalendarColor(id: string, colorIndex: number) {
+    if (colorIndex < 0 || colorIndex >= COLOR_PALETTES.length) return;
+
+    const newColor = COLOR_PALETTES[colorIndex];
+
+    this.calendars.update(cals =>
+      cals.map(cal =>
+        cal.id === id ? { ...cal, color: newColor } : cal
+      )
+    );
   }
 }
